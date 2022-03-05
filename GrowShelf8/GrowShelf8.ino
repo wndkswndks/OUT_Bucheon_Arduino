@@ -10,7 +10,7 @@
 #include <FS.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include <ESP8266WebServer.h>////////
+#include <ESP8266WebServer.h>////////---
 #include <time.h>
 String wifissid = "";
 String wifipassword = "";
@@ -578,10 +578,10 @@ void loop() {
   if (digitalRead(levelSensor) == LOW ) { //LOW is out of water **
     if ((currentSec - lastWaterFullSec) > 1) {
       if (remainingSec % 5 == 0) {
-        digitalWrite (lightRelay, HIGH);  //low trigger
+        digitalWrite (lightRelay, LOW);  //low trigger
       }
       else {
-        digitalWrite (lightRelay, LOW);  //low trigger
+        digitalWrite (lightRelay, HIGH);  //low trigger
       }
 
       digitalWrite(pumpRelay, HIGH); //low trigger
@@ -596,8 +596,8 @@ void loop() {
     if (remainingSec <= 0 && remainingSec > -1 * pumpOpTime )  {
       digitalWrite(pumpRelay, LOW); //low trigger
     }
-    if (lightStat == 0) digitalWrite(lightRelay, HIGH);  //low trigger
-    if (lightStat == 1) digitalWrite(lightRelay, LOW);  //low trigger
+    if (lightStat == 0) digitalWrite(lightRelay, LOW);  //low trigger
+    if (lightStat == 1) digitalWrite(lightRelay, HIGH);  //low trigger
     if (lightStat == 2) {
       //Serial.println(lightOnValue);
       if (remainingSec % 2 == 0) {
@@ -730,7 +730,7 @@ void page() {
   if (lightStat == 1) {
     webPage += "켜짐</h3>\n";
   }
-  if (lightStat == 2) {
+  if (lightStat == 2) {////팬 제어로 변경 
     webPage += "빛감지모드</h3>\n";
   }
   if (lightStat == 3) {
@@ -738,9 +738,9 @@ void page() {
   }
   webPage += "<p><a class=\"button button-on\" href=\"/lightOn\">ON</a>\n";
   webPage += "<a class=\"button button-off\" href=\"/lightOff\">OFF</a></p>\n";
-  webPage += "<p><a class=\"button button-auto\" href=\"/lightAuto\">빛감지모드</a>\n";
-  webPage += "<a class=\"button button-timer\" href=\"/lightTimer\">시간별제어</a></p>\n";
-  if (lightStat == 2) {
+  webPage += "<p><a class=\"button button-auto\" href=\"/lightAuto\">빛감지모드</a>\n";//// 이거 지우고 시간별제어 가운데로 오게하기
+  webPage += "<a class=\"button button-timer\" href=\"/lightTimer\">김주안제어</a></p>\n";
+  if (lightStat == 2) {//// 이자리에 그대로 넣어도 되나?? 아니면 밑으로 가게할까?
     webPage += "<h3>LED 점등감도: " ;
     webPage += lightOnValue ;
     webPage += "</h3>\n" ;
@@ -774,6 +774,8 @@ void page() {
   webPage += "초 가동</h3>\n" ;
   webPage += "<p><a class=\"button button-minus\" href=\"/pump-10\">-5초</a>\n";
   webPage += "<a class=\"button button-plus\" href=\"/pump+10\">+5초</a></p>\n";
+  ////여기에 팬가동 , 팬 작동시간 넣기/FAN-10,FAN+10,INTERVAL-10,INTERVAL+10 생성
+  ////그및에 펌프작동시작 설정 버튼 넣기
   webPage += "<h3>Password 변경 & Network 설정</h3>\n" ;
   webPage += "<p>서버모드 비밀번호 변경 및 클라이언트모드 접속 설정</p>\n" ;
   webPage += "<p><a class=\"button button-changePW\" href=\"/changePW\">비밀번호변경</a>\n";
