@@ -5,7 +5,7 @@
   pump relay to pin GPIO 12 (D6)
   light relay to pin GPIO 13 (D7)
   Server IP Address: "192.168.0.1"
-  last revised 2021.5.29 2021.3.15 2021.2.24  2020.11.2
+  last revised 2021.5.29 2021.3.15 2021.2.24  2020.11.2////
 */
 #include <FS.h>
 #include <ESP8266WiFi.h>
