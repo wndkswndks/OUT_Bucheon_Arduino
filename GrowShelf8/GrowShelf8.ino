@@ -37,8 +37,6 @@ int pumpOpTime_FAN = 15;  //15 sec
 
 int lastWaterFullSec = 0;
 int lightStat = 1;
-int lightValuePin = A0;  //A0
-int lightOnValue = 600;  //600, 0 dark ~ 1023 bright
 int lightValue = 0;
 int levelSensor = 14; //D5
 int pumpRelay = 12; //D6
@@ -66,7 +64,6 @@ void setup() {
   Serial.println();
   Serial.println("System started ");
   WiFi.mode(WIFI_AP_STA);
-  pinMode(lightValuePin, INPUT);
   pinMode(levelSensor, INPUT);
   pinMode(pumpRelay, OUTPUT);
   pinMode(pumpRelay_FAN, OUTPUT);
@@ -112,13 +109,6 @@ void setup() {
     line = f.readStringUntil('\n');
     //Serial.println(line);
     lightStat = line.toInt();
-  }
-  f.close();
-  f = SPIFFS.open("/lightOn.txt", "r");
-  while (f.available()) {
-    line = f.readStringUntil('\n');
-    //Serial.println(line);
-    lightOnValue = line.toInt();
   }
   f.close();
   f = SPIFFS.open("/ssid.txt", "r");
@@ -297,32 +287,7 @@ void setup() {
     delay(10);
   });
 
-  server.on("/lightAuto", []() {
-    lightStat = 2;
-    lightValue = (analogRead(lightValuePin));
-    page() ;
-    server.send(200, "text/html", webPage);
-    writeInitial();
-    delay(10);
-  });
 
-  server.on("/light+10", []() {
-    lightOnValue = lightOnValue + 10;
-    if (lightOnValue > 1000) lightOnValue = 1000;
-    page() ;
-    server.send(200, "text/html", webPage);
-    writeInitial();
-    delay(10);
-  });
-
-  server.on("/light-10", []() {
-    lightOnValue = lightOnValue - 10;
-    if (lightOnValue < 0) lightOnValue = 0;
-    page() ;
-    server.send(200, "text/html", webPage);
-    writeInitial();
-    delay(10);
-  });
 
   server.on("/lightTimer", []() {
     lightStat = 3;
@@ -681,20 +646,7 @@ void loop() {
     }
     if (lightStat == 0) digitalWrite(lightRelay, LOW);  //low trigger
     if (lightStat == 1) digitalWrite(lightRelay, HIGH);  //low trigger
-    if (lightStat == 2) {
-      //Serial.println(lightOnValue);
-      if (remainingSec % 2 == 0) {
-        lightValue = (analogRead(lightValuePin));                            //***
-      }
-      if (lightValue <= lightOnValue) { //0 dark ~ 1023 bright
-        digitalWrite(lightRelay, HIGH);  //low trigger
-        delay(1000);
-      }
-      else {
-        digitalWrite(lightRelay, LOW);  //low trigger
-        delay(1000);
-      }
-    }
+
     if (lightStat == 3) {
       virTimeMinute = int(millis() / 1000 / 60) + adjTimeMinute;
       hour = (virTimeMinute / 60) % 24;
@@ -739,10 +691,7 @@ void writeInitial() {
   if (f) f.println(String(lightStat));
   if (!f) Serial.println("file open failed");
   f.close();
-  f = SPIFFS.open("/lightOn.txt", "w");
-  if (f) f.println(String(lightOnValue));
-  if (!f) Serial.println("file open failed");
-  f.close();
+
 }
 
 void writeInitial2() {
@@ -823,9 +772,7 @@ void page() {
   if (lightStat == 1) {
     webPage += "켜짐</h3>\n";
   }
-  if (lightStat == 2) {
-    webPage += "빛감지모드</h3>\n";
-  }
+
   if (lightStat == 3) {
     webPage += "시간별제어</h3>\n";
   }
@@ -833,16 +780,7 @@ void page() {
   webPage += "<a class=\"button button-off\" href=\"/lightOff\">OFF</a></p>\n";
   webPage += "<p>\n";//// 이거 지우고 시간별제어 가운데로 오게하기
   webPage += "<a class=\"button button-timer\" href=\"/lightTimer\">시간별제어</a></p>\n";
-  if (lightStat == 2) {//// 이자리에 그대로 넣어도 되나?? 아니면 밑으로 가게할까?
-    webPage += "<h3>LED 점등감도: " ;
-    webPage += lightOnValue ;
-    webPage += "</h3>\n" ;
-    webPage += "<p>현재 빛감도: " ;
-    webPage += lightValue ;
-    webPage += "</p>\n" ;
-    webPage += "<p><a class=\"button button-minus2\" href=\"/light-10\">감도어둡게</a>\n";
-    webPage += "<a class=\"button button-plus2\" href=\"/light+10\">감도밝게</a></p>\n";
-  }
+
   if (lightStat == 3) {
     webPage += "<h3>현재시각: " ;
     virTimeMinute = int(millis() / 1000 / 60) + adjTimeMinute;
