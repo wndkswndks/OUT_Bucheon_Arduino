@@ -17,6 +17,8 @@ String wifipassword = "";
 char wifissid2[20];
 char wifipassword2[20];
 int startSec;
+int startSec_FAN;
+
 int currentSec;/////wndks
 int hour = 12;
 int minute = 00;
@@ -25,8 +27,14 @@ int offHour = 21;
 int adjTimeMinute = hour * 60 + minute - int(millis() / 1000 / 60);
 int virTimeMinute = int(millis() / 1000 / 60) + adjTimeMinute;
 int remainingSec = 0;
+int remainingSec_FAN = 0;
+
 int intervalTime = 120;  //120 sec
+int intervalTime_FAN = 120;  //120 sec
+
 int pumpOpTime = 15;  //15 sec
+int pumpOpTime_FAN = 15;  //15 sec
+
 int lastWaterFullSec = 0;
 int lightStat = 1;
 int lightValuePin = A0;  //A0
@@ -34,6 +42,8 @@ int lightOnValue = 600;  //600, 0 dark ~ 1023 bright
 int lightValue = 0;
 int levelSensor = 14; //D5
 int pumpRelay = 12; //D6
+int pumpRelay_FAN = 16; //D0 //임시
+
 int lightRelay = 13; //D7
 IPAddress local_ip(192, 168, 0, 1);
 IPAddress gateway(192, 168, 0, 1);
@@ -59,8 +69,10 @@ void setup() {
   pinMode(lightValuePin, INPUT);
   pinMode(levelSensor, INPUT);
   pinMode(pumpRelay, OUTPUT);
+  pinMode(pumpRelay_FAN, OUTPUT);
   pinMode(lightRelay, OUTPUT);
-  digitalWrite(pumpRelay, HIGH); //low trigger
+  digitalWrite(pumpRelay, LOW); //low trigger
+  digitalWrite(pumpRelay_FAN, LOW); //low trigger
   digitalWrite(lightRelay, HIGH); //low trigger
   SPIFFS.begin();
   File f = SPIFFS.open("/interval.txt", "r");
@@ -70,6 +82,15 @@ void setup() {
     intervalTime = line.toInt();
   }
   f.close();
+
+  f = SPIFFS.open("/interval_FAN.txt", "r");
+  while (f.available()) {
+    line = f.readStringUntil('\n');
+    //Serial.println(line);
+    intervalTime_FAN = line.toInt();
+  }
+  f.close();
+  
   f = SPIFFS.open("/pump.txt", "r");
   while (f.available()) {
     line = f.readStringUntil('\n');
@@ -77,6 +98,15 @@ void setup() {
     pumpOpTime = line.toInt();
   }
   f.close();
+
+  f = SPIFFS.open("/pump_FAN.txt", "r");
+  while (f.available()) {
+    line = f.readStringUntil('\n');
+    //Serial.println(line);
+    pumpOpTime_FAN = line.toInt();
+  }
+  f.close();
+  
   f = SPIFFS.open("/light.txt", "r");
   while (f.available()) {
     line = f.readStringUntil('\n');
@@ -156,6 +186,7 @@ void setup() {
   }
 
   startSec = int(millis() / 1000);
+  startSec_FAN = int(millis() / 1000);
 
   server.on("/", []() {
     page() ;
@@ -189,6 +220,27 @@ void setup() {
     delay(10);
   });
 
+  server.on("/interval_FAN+10", []() {
+    intervalTime_FAN = intervalTime_FAN + 60;
+    if (intervalTime_FAN > 1800) intervalTime_FAN = 1800;
+    page() ;
+    server.send(200, "text/html", webPage);
+    writeInitial();
+    startSec_FAN = int(millis() / 1000);
+    delay(10);
+  });
+
+  server.on("/interval_FAN-10", []() {
+    intervalTime_FAN = intervalTime_FAN - 60;
+    if (intervalTime_FAN < 120) intervalTime_FAN = 120;
+    page() ;
+    server.send(200, "text/html", webPage);
+    writeInitial();
+    startSec_FAN = int(millis() / 1000);
+    delay(10);
+  });
+
+
   server.on("/pump+10", []() {
     pumpOpTime = pumpOpTime + 5;
     if (pumpOpTime > 20) pumpOpTime = 20;
@@ -208,6 +260,26 @@ void setup() {
     startSec = int(millis() / 1000);
     delay(10);
   });
+  server.on("/pump_FAN+10", []() {
+    pumpOpTime_FAN = pumpOpTime_FAN + 5;
+    if (pumpOpTime_FAN > 20) pumpOpTime_FAN = 20;
+    page() ;
+    server.send(200, "text/html", webPage);
+    writeInitial();
+    startSec_FAN = int(millis() / 1000);
+    delay(10);
+  });
+
+  server.on("/pump_FAN-10", []() {
+    pumpOpTime_FAN = pumpOpTime_FAN - 5;
+    if (pumpOpTime_FAN < 0) pumpOpTime_FAN = 0;
+    page() ;
+    server.send(200, "text/html", webPage);
+    writeInitial();
+    startSec_FAN = int(millis() / 1000);
+    delay(10);
+  });
+
 
   server.on("/lightOn", []() {
     lightStat = 1;
@@ -565,6 +637,7 @@ void loop() {
   //if (WiFi.status() != WL_CONNECTED) toGetIDnPass();
   currentSec = int(millis() / 1000);
   remainingSec = intervalTime - currentSec + startSec - pumpOpTime;
+  remainingSec_FAN = intervalTime_FAN - currentSec + startSec_FAN - pumpOpTime_FAN;
   //Serial.print(remainingSec);
   //Serial.println(remainingSec%5);
   if (currentSec > 3600 * 24 * 30) {
@@ -575,6 +648,9 @@ void loop() {
   if (remainingSec <= -1 * pumpOpTime )  {
     startSec = int(millis() / 1000);
   }
+  if (remainingSec_FAN <= -1 * pumpOpTime_FAN )  {
+    startSec_FAN = int(millis() / 1000);
+  }
   if (digitalRead(levelSensor) == LOW ) { //LOW is out of water **
     if ((currentSec - lastWaterFullSec) > 1) {
       if (remainingSec % 5 == 0) {
@@ -584,17 +660,24 @@ void loop() {
         digitalWrite (lightRelay, HIGH);  //low trigger
       }
 
-      digitalWrite(pumpRelay, HIGH); //low trigger
+      digitalWrite(pumpRelay, LOW); //low trigger
+      digitalWrite(pumpRelay_FAN, LOW); //low trigger
 
     }
   }
   else {
     lastWaterFullSec = int(millis() / 1000);                                 //**
     if (remainingSec > 0)  {
-      digitalWrite(pumpRelay, HIGH); //low trigger
+      digitalWrite(pumpRelay, LOW); //low trigger
     }
     if (remainingSec <= 0 && remainingSec > -1 * pumpOpTime )  {
-      digitalWrite(pumpRelay, LOW); //low trigger
+      digitalWrite(pumpRelay, HIGH); //low trigger
+    }
+    if (remainingSec_FAN > 0)  {
+      digitalWrite(pumpRelay_FAN, LOW); //low trigger
+    }
+    if (remainingSec_FAN <= 0 && remainingSec_FAN > -1 * pumpOpTime_FAN )  {
+      digitalWrite(pumpRelay_FAN, HIGH); //low trigger
     }
     if (lightStat == 0) digitalWrite(lightRelay, LOW);  //low trigger
     if (lightStat == 1) digitalWrite(lightRelay, HIGH);  //low trigger
@@ -638,10 +721,20 @@ void writeInitial() {
   if (f) f.println(String(intervalTime));
   if (!f) Serial.println("file open failed");
   f.close();
+  f = SPIFFS.open("/interval_FAN.txt", "w");
+  if (f) f.println(String(intervalTime_FAN));
+  if (!f) Serial.println("file open failed");
+  f.close();
+  
   f = SPIFFS.open("/pump.txt", "w");
   if (f) f.println(String(pumpOpTime));
   if (!f) Serial.println("file open failed");
   f.close();
+  f = SPIFFS.open("/pump_FAN.txt", "w");
+  if (f) f.println(String(pumpOpTime_FAN));
+  if (!f) Serial.println("file open failed");
+  f.close();
+  
   f = SPIFFS.open("/light.txt", "w");
   if (f) f.println(String(lightStat));
   if (!f) Serial.println("file open failed");
@@ -730,7 +823,7 @@ void page() {
   if (lightStat == 1) {
     webPage += "켜짐</h3>\n";
   }
-  if (lightStat == 2) {////팬 제어로 변경 
+  if (lightStat == 2) {
     webPage += "빛감지모드</h3>\n";
   }
   if (lightStat == 3) {
@@ -776,15 +869,15 @@ void page() {
   webPage += "<a class=\"button button-plus\" href=\"/pump+10\">+5초</a></p>\n";
 
   webPage += "<h3>팬 가동 Interval: 매 " ;
-  webPage += int(intervalTime / 60) ;
+  webPage += int(intervalTime_FAN / 60) ;
   webPage += "분 마다</h3>\n" ;
-  webPage += "<p><a class=\"button button-minus\" href=\"/interval-10\">-1분</a>\n";
-  webPage += "<a class=\"button button-plus\" href=\"/interval+10\">+1분</a></p>\n";
+  webPage += "<p><a class=\"button button-minus\" href=\"/interval_FAN-10\">-1분</a>\n";
+  webPage += "<a class=\"button button-plus\" href=\"/interval_FAN+10\">+1분</a></p>\n";
   webPage += "<h3>팬 작동시간: " ;
-  webPage += pumpOpTime ;
+  webPage += pumpOpTime_FAN ;
   webPage += "초 가동</h3>\n" ;
-  webPage += "<p><a class=\"button button-minus\" href=\"/pump-10\">-5초</a>\n";
-  webPage += "<a class=\"button button-plus\" href=\"/pump+10\">+5초</a></p>\n";
+  webPage += "<p><a class=\"button button-minus\" href=\"/pump_FAN-10\">-5초</a>\n";
+  webPage += "<a class=\"button button-plus\" href=\"/pump_FAN+10\">+5초</a></p>\n";
 
   
   ////여기에 팬가동 , 팬 작동시간 넣기/FAN-10,FAN+10,INTERVAL-10,INTERVAL+10 생성
