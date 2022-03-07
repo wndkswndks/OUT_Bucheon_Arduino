@@ -37,6 +37,7 @@ int pumpOpTime_FAN = 15;  //15 sec
 
 int lastWaterFullSec = 0;
 int lightStat = 1;
+int fanStat = 1;
 int lightValue = 0;
 int levelSensor = 14; //D5
 int pumpRelay = 12; //D6
@@ -111,6 +112,15 @@ void setup() {
     lightStat = line.toInt();
   }
   f.close();
+
+  f = SPIFFS.open("/fan.txt", "r");
+  while (f.available()) {
+    line = f.readStringUntil('\n');
+    //Serial.println(line);
+    fanStat = line.toInt();
+  }
+  f.close();
+  
   f = SPIFFS.open("/ssid.txt", "r");
   while (f.available()) {
     wifissid = f.readStringUntil('\n');
@@ -297,6 +307,32 @@ void setup() {
     writeInitial();
     delay(10);
   });
+
+  server.on("/fanOn", []() {
+    fanStat = 1;
+    page() ;
+    server.send(200, "text/html", webPage);
+    writeInitial();
+    delay(10);
+  });
+
+  server.on("/fanOff", []() {
+    fanStat = 0;
+    page() ;
+    server.send(200, "text/html", webPage);
+    writeInitial();
+    delay(10);
+  });
+
+  server.on("/fanInterval", []() {
+    fanStat = 2;
+    startSec_FAN = int(millis() / 1000);
+    page() ;
+    server.send(200, "text/html", webPage);
+    writeInitial();
+    delay(10);
+  });
+
 
   server.on("/setTime", []() {
     String s = "<!DOCTYPE html> <html>\n";
@@ -638,12 +674,7 @@ void loop() {
     if (remainingSec <= 0 && remainingSec > -1 * pumpOpTime )  {
       digitalWrite(pumpRelay, HIGH); //low trigger
     }
-    if (remainingSec_FAN > 0)  {
-      digitalWrite(pumpRelay_FAN, LOW); //low trigger
-    }
-    if (remainingSec_FAN <= 0 && remainingSec_FAN > -1 * pumpOpTime_FAN )  {
-      digitalWrite(pumpRelay_FAN, HIGH); //low trigger
-    }
+
     if (lightStat == 0) digitalWrite(lightRelay, LOW);  //low trigger
     if (lightStat == 1) digitalWrite(lightRelay, HIGH);  //low trigger
 
@@ -665,6 +696,17 @@ void loop() {
         else digitalWrite(lightRelay, HIGH);  //low trigger
       }
       if (onHour == offHour) digitalWrite(lightRelay, HIGH);
+    }
+    if(fanStat == 0) digitalWrite(pumpRelay_FAN, LOW);  //low trigger
+    if(fanStat == 1) digitalWrite(pumpRelay_FAN, HIGH);  //low trigger
+    if(fanStat == 2) 
+    {
+		if (remainingSec_FAN > 0)  {
+	      digitalWrite(pumpRelay_FAN, LOW); //low trigger
+	    }
+	    if (remainingSec_FAN <= 0 && remainingSec_FAN > -1 * pumpOpTime_FAN )  {
+	      digitalWrite(pumpRelay_FAN, HIGH); //low trigger
+	    }
     }
   }
 }
@@ -689,6 +731,11 @@ void writeInitial() {
   
   f = SPIFFS.open("/light.txt", "w");
   if (f) f.println(String(lightStat));
+  if (!f) Serial.println("file open failed");
+  f.close();
+
+  f = SPIFFS.open("/fan.txt", "w");
+  if (f) f.println(String(fanStat));
   if (!f) Serial.println("file open failed");
   f.close();
 
@@ -806,17 +853,37 @@ void page() {
   webPage += "<p><a class=\"button button-minus\" href=\"/pump-10\">-5초</a>\n";
   webPage += "<a class=\"button button-plus\" href=\"/pump+10\">+5초</a></p>\n";
 
-  webPage += "<h3>팬 가동 Interval: 매 " ;
-  webPage += int(intervalTime_FAN / 60) ;
-  webPage += "분 마다</h3>\n" ;
-  webPage += "<p><a class=\"button button-minus\" href=\"/interval_FAN-10\">-1분</a>\n";
-  webPage += "<a class=\"button button-plus\" href=\"/interval_FAN+10\">+1분</a></p>\n";
-  webPage += "<h3>팬 작동시간: " ;
-  webPage += pumpOpTime_FAN ;
-  webPage += "초 가동</h3>\n" ;
-  webPage += "<p><a class=\"button button-minus\" href=\"/pump_FAN-10\">-5초</a>\n";
-  webPage += "<a class=\"button button-plus\" href=\"/pump_FAN+10\">+5초</a></p>\n";
+  webPage += "<h3>FAN 제어: ";
+  if (fanStat == 0) {
+    webPage += "꺼짐</h3>\n";
+  }
+  if (fanStat == 1) {
+    webPage += "켜짐</h3>\n";
+  }
 
+  if (fanStat == 2) {
+    webPage += "Interval 제어</h3>\n";
+  }
+  
+  webPage += "<p><a class=\"button button-on\" href=\"/fanOn\">ON</a>\n";
+  webPage += "<a class=\"button button-off\" href=\"/fanOff\">OFF</a></p>\n";
+  webPage += "<p>\n";
+  webPage += "<a class=\"button button-timer\" href=\"/fanInterval\">Interval제어</a></p>\n";
+
+
+  if(fanStat == 2)
+  {
+	  webPage += "<h3>팬 가동 Interval: 매 " ;
+	  webPage += int(intervalTime_FAN / 60) ;
+	  webPage += "분 마다</h3>\n" ;
+	  webPage += "<p><a class=\"button button-minus\" href=\"/interval_FAN-10\">-1분</a>\n";
+	  webPage += "<a class=\"button button-plus\" href=\"/interval_FAN+10\">+1분</a></p>\n";
+	  webPage += "<h3>팬 작동시간: " ;
+	  webPage += pumpOpTime_FAN ;
+	  webPage += "초 가동</h3>\n" ;
+	  webPage += "<p><a class=\"button button-minus\" href=\"/pump_FAN-10\">-5초</a>\n";
+	  webPage += "<a class=\"button button-plus\" href=\"/pump_FAN+10\">+5초</a></p>\n";
+  }	
   
   ////여기에 팬가동 , 팬 작동시간 넣기/FAN-10,FAN+10,INTERVAL-10,INTERVAL+10 생성
   ////그및에 펌프작동시작 설정 버튼 넣기
