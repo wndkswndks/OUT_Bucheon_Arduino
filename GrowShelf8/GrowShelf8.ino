@@ -261,8 +261,8 @@ void setup() {
     delay(10);
   });
   server.on("/pump_FAN+10", []() {
-    pumpOpTime_FAN = pumpOpTime_FAN + 5;
-    if (pumpOpTime_FAN > 20) pumpOpTime_FAN = 20;
+    pumpOpTime_FAN = pumpOpTime_FAN + 60;
+    if (pumpOpTime_FAN > 1740) pumpOpTime_FAN = 20;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -271,8 +271,8 @@ void setup() {
   });
 
   server.on("/pump_FAN-10", []() {
-    pumpOpTime_FAN = pumpOpTime_FAN - 5;
-    if (pumpOpTime_FAN < 0) pumpOpTime_FAN = 0;
+    pumpOpTime_FAN = pumpOpTime_FAN - 60;
+    if (pumpOpTime_FAN < 60) pumpOpTime_FAN = 60;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -652,7 +652,7 @@ void loop() {
   if (remainingSec_FAN <= -1 * pumpOpTime_FAN )  {
     startSec_FAN = int(millis() / 1000);
   }
-  if (digitalRead(levelSensor) == LOW ) { //LOW is out of water **
+  if (digitalRead(levelSensor) == HIGH ) { //LOW is out of water **
     if ((currentSec - lastWaterFullSec) > 1) {
       if (remainingSec % 5 == 0) {
         digitalWrite (lightRelay, LOW);  //low trigger
@@ -685,17 +685,17 @@ void loop() {
       //Serial.println(hour);
       if (onHour < offHour) {
         if (hour < offHour && hour >= onHour) { //8AM-20PM
-          digitalWrite(lightRelay, LOW);  //low trigger
+          digitalWrite(lightRelay, HIGH);  //low trigger
         }
-        else digitalWrite(lightRelay, HIGH);  //low trigger
+        else digitalWrite(lightRelay, LOW);  //low trigger
       }
       if (onHour > offHour) {
         if (hour < offHour || hour >= onHour) { //20AM-8PM
-          digitalWrite(lightRelay, LOW);  //low trigger
+          digitalWrite(lightRelay, HIGH);  //low trigger
         }
-        else digitalWrite(lightRelay, HIGH);  //low trigger
+        else digitalWrite(lightRelay, LOW);  //low trigger
       }
-      if (onHour == offHour) digitalWrite(lightRelay, HIGH);
+      if (onHour == offHour) digitalWrite(lightRelay, LOW);
     }
     if(fanStat == 0) digitalWrite(pumpRelay_FAN, LOW);  //low trigger
     if(fanStat == 1) digitalWrite(pumpRelay_FAN, HIGH);  //low trigger
@@ -879,10 +879,10 @@ void page() {
 	  webPage += "<p><a class=\"button button-minus\" href=\"/interval_FAN-10\">-1분</a>\n";
 	  webPage += "<a class=\"button button-plus\" href=\"/interval_FAN+10\">+1분</a></p>\n";
 	  webPage += "<h3>팬 작동시간: " ;
-	  webPage += pumpOpTime_FAN ;
-	  webPage += "초 가동</h3>\n" ;
-	  webPage += "<p><a class=\"button button-minus\" href=\"/pump_FAN-10\">-5초</a>\n";
-	  webPage += "<a class=\"button button-plus\" href=\"/pump_FAN+10\">+5초</a></p>\n";
+	  webPage += int(pumpOpTime_FAN / 60) ;
+	  webPage += "분 가동</h3>\n" ;
+	  webPage += "<p><a class=\"button button-minus\" href=\"/pump_FAN-10\">-1분</a>\n";
+	  webPage += "<a class=\"button button-plus\" href=\"/pump_FAN+10\">+1분</a></p>\n";
   }	
   
   ////여기에 팬가동 , 팬 작동시간 넣기/FAN-10,FAN+10,INTERVAL-10,INTERVAL+10 생성
