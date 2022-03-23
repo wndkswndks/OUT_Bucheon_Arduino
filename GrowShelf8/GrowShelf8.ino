@@ -662,7 +662,6 @@ void loop() {
       }
 
       digitalWrite(pumpRelay, LOW); //low trigger
-      digitalWrite(pumpRelay_FAN, LOW); //low trigger
 
     }
   }
@@ -697,6 +696,9 @@ void loop() {
       }
       if (onHour == offHour) digitalWrite(lightRelay, LOW);
     }
+
+  }
+
     if(fanStat == 0) digitalWrite(pumpRelay_FAN, LOW);  //low trigger
     if(fanStat == 1) digitalWrite(pumpRelay_FAN, HIGH);  //low trigger
     if(fanStat == 2) 
@@ -708,7 +710,6 @@ void loop() {
 	      digitalWrite(pumpRelay_FAN, HIGH); //low trigger
 	    }
     }
-  }
 }
 void writeInitial() {
   File f = SPIFFS.open("/interval.txt", "w");
