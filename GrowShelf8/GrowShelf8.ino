@@ -221,8 +221,8 @@ void setup() {
   });
 
   server.on("/interval_FAN+10", []() {
-    intervalTime_FAN = intervalTime_FAN + 60;
-    if (intervalTime_FAN > 1800) intervalTime_FAN = 1800;
+    intervalTime_FAN = intervalTime_FAN + 60*30;
+    if (intervalTime_FAN > 60*60*5) intervalTime_FAN = 60*60*5;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -231,8 +231,8 @@ void setup() {
   });
 
   server.on("/interval_FAN-10", []() {
-    intervalTime_FAN = intervalTime_FAN - 60;
-    if (intervalTime_FAN < 120) intervalTime_FAN = 120;
+    intervalTime_FAN = intervalTime_FAN - 60*30;
+    if (intervalTime_FAN < 0) intervalTime_FAN = 0;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -261,8 +261,8 @@ void setup() {
     delay(10);
   });
   server.on("/pump_FAN+10", []() {
-    pumpOpTime_FAN = pumpOpTime_FAN + 60;
-    if (pumpOpTime_FAN > 1740) pumpOpTime_FAN = 20;
+    pumpOpTime_FAN = pumpOpTime_FAN + 60*30;
+    if (pumpOpTime_FAN > 60*60*5) pumpOpTime_FAN = 60*60*5;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -271,8 +271,8 @@ void setup() {
   });
 
   server.on("/pump_FAN-10", []() {
-    pumpOpTime_FAN = pumpOpTime_FAN - 60;
-    if (pumpOpTime_FAN < 60) pumpOpTime_FAN = 60;
+    pumpOpTime_FAN = pumpOpTime_FAN - 60*30;
+    if (pumpOpTime_FAN < 0) pumpOpTime_FAN = 0;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -877,13 +877,13 @@ void page() {
 	  webPage += "<h3>팬 가동 Interval: 매 " ;
 	  webPage += int(intervalTime_FAN / 60) ;
 	  webPage += "분 마다</h3>\n" ;
-	  webPage += "<p><a class=\"button button-minus\" href=\"/interval_FAN-10\">-1분</a>\n";
-	  webPage += "<a class=\"button button-plus\" href=\"/interval_FAN+10\">+1분</a></p>\n";
+	  webPage += "<p><a class=\"button button-minus\" href=\"/interval_FAN-10\">-30분</a>\n";
+	  webPage += "<a class=\"button button-plus\" href=\"/interval_FAN+10\">+30분</a></p>\n";
 	  webPage += "<h3>팬 작동시간: " ;
 	  webPage += int(pumpOpTime_FAN / 60) ;
 	  webPage += "분 가동</h3>\n" ;
-	  webPage += "<p><a class=\"button button-minus\" href=\"/pump_FAN-10\">-1분</a>\n";
-	  webPage += "<a class=\"button button-plus\" href=\"/pump_FAN+10\">+1분</a></p>\n";
+	  webPage += "<p><a class=\"button button-minus\" href=\"/pump_FAN-10\">-30분</a>\n";
+	  webPage += "<a class=\"button button-plus\" href=\"/pump_FAN+10\">+30분</a></p>\n";
   }	
   
   ////여기에 팬가동 , 팬 작동시간 넣기/FAN-10,FAN+10,INTERVAL-10,INTERVAL+10 생성
