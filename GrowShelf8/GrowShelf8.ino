@@ -77,7 +77,7 @@ void setup() {
   while (f.available()) {
     line = f.readStringUntil('\n');
     //Serial.println(line);
-    intervalTime = line.toInt();
+    intervalTime = 120;//line.toInt();
   }
   f.close();
 
@@ -85,7 +85,7 @@ void setup() {
   while (f.available()) {
     line = f.readStringUntil('\n');
     //Serial.println(line);
-    intervalTime_FAN = line.toInt();
+    intervalTime_FAN = 60*60;//line.toInt();
   }
   f.close();
   
@@ -93,7 +93,7 @@ void setup() {
   while (f.available()) {
     line = f.readStringUntil('\n');
     //Serial.println(line);
-    pumpOpTime = line.toInt();
+    pumpOpTime = 15;//line.toInt();
   }
   f.close();
 
@@ -101,7 +101,7 @@ void setup() {
   while (f.available()) {
     line = f.readStringUntil('\n');
     //Serial.println(line);
-    pumpOpTime_FAN = line.toInt();
+    pumpOpTime_FAN = 30*60;//line.toInt();
   }
   f.close();
   
@@ -109,7 +109,7 @@ void setup() {
   while (f.available()) {
     line = f.readStringUntil('\n');
     //Serial.println(line);
-    lightStat = line.toInt();
+    lightStat = 0;//line.toInt();
   }
   f.close();
 
@@ -117,7 +117,7 @@ void setup() {
   while (f.available()) {
     line = f.readStringUntil('\n');
     //Serial.println(line);
-    fanStat = line.toInt();
+    fanStat = 0;//line.toInt();
   }
   f.close();
   
