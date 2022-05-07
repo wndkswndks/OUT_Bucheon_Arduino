@@ -85,7 +85,7 @@ void setup() {
   while (f.available()) {
     line = f.readStringUntil('\n');
     //Serial.println(line);
-    intervalTime_FAN = 60*60;//line.toInt();
+    intervalTime_FAN = 30*60;//line.toInt();
   }
   f.close();
   
