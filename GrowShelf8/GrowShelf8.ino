@@ -101,7 +101,7 @@ void setup() {
   while (f.available()) {
     line = f.readStringUntil('\n');
     //Serial.println(line);
-    pumpOpTime_FAN = 30*60;//line.toInt();
+    pumpOpTime_FAN = 10*60;//line.toInt();
   }
   f.close();
   
@@ -221,7 +221,7 @@ void setup() {
   });
 
   server.on("/interval_FAN+10", []() {
-    intervalTime_FAN = intervalTime_FAN + 60*30;
+    intervalTime_FAN = intervalTime_FAN + 10*60;
     if (intervalTime_FAN > 60*60*5) intervalTime_FAN = 60*60*5;
     page() ;
     server.send(200, "text/html", webPage);
@@ -231,8 +231,8 @@ void setup() {
   });
 
   server.on("/interval_FAN-10", []() {
-    intervalTime_FAN = intervalTime_FAN - 60*30;
-    if (intervalTime_FAN < 0) intervalTime_FAN = 0;
+    intervalTime_FAN = intervalTime_FAN - 10*60;
+    if (intervalTime_FAN < pumpOpTime_FAN) intervalTime_FAN = intervalTime_FAN + 10*60;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -261,8 +261,8 @@ void setup() {
     delay(10);
   });
   server.on("/pump_FAN+10", []() {
-    pumpOpTime_FAN = pumpOpTime_FAN + 60*30;
-    if (pumpOpTime_FAN > 60*60*5) pumpOpTime_FAN = 60*60*5;
+    pumpOpTime_FAN = pumpOpTime_FAN + 10*60;
+    if (pumpOpTime_FAN > 30*60) pumpOpTime_FAN = 30*60;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -271,7 +271,7 @@ void setup() {
   });
 
   server.on("/pump_FAN-10", []() {
-    pumpOpTime_FAN = pumpOpTime_FAN - 60*30;
+    pumpOpTime_FAN = pumpOpTime_FAN - 10*60;
     if (pumpOpTime_FAN < 0) pumpOpTime_FAN = 0;
     page() ;
     server.send(200, "text/html", webPage);
@@ -631,6 +631,10 @@ void setup() {
   Serial.println("");
 
 }
+uint8_t water_flag = 0;
+uint8_t waterLowStartTime = 0;
+uint8_t waterLowNowTime = 0;
+
 
 void loop() {
   delay(10);
@@ -653,19 +657,37 @@ void loop() {
     startSec_FAN = int(millis() / 1000);
   }
   if (digitalRead(levelSensor) == HIGH ) { //LOW is out of water **
-    if ((currentSec - lastWaterFullSec) > 1) {
-      if (remainingSec % 5 == 0) {
-        digitalWrite (lightRelay, LOW);  //low trigger
-      }
-      else {
-        digitalWrite (lightRelay, HIGH);  //low trigger
-      }
 
-      digitalWrite(pumpRelay, LOW); //low trigger
+	if(!water_flag)
+	{
+		waterLowStartTime  = int(millis() / 1000);
+	}
+	water_flag = 1;
+	waterLowNowTime  = int(millis() / 1000);
 
+	if(waterLowNowTime - waterLowStartTime > 60*90)
+	{
+		digitalWrite(pumpRelay, LOW); //low trigger
+	}
+	else
+	{
+  		
+	    if ((currentSec - lastWaterFullSec) > 1) {
+	      if (remainingSec % 5 == 0) {
+	        digitalWrite (lightRelay, LOW);  //low trigger
+	      }
+	      else {
+	        digitalWrite (lightRelay, HIGH);  //low trigger
+	      }
+
+	      digitalWrite(pumpRelay, LOW); //low trigger
+
+	    }
     }
   }
   else {
+
+  	water_flag = 0;
     lastWaterFullSec = int(millis() / 1000);                                 //**
     if (remainingSec > 0)  {
       digitalWrite(pumpRelay, LOW); //low trigger
