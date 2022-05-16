@@ -85,7 +85,7 @@ void setup() {
   while (f.available()) {
     line = f.readStringUntil('\n');
     //Serial.println(line);
-    intervalTime_FAN = 30*60;//line.toInt();
+    intervalTime_FAN = 60*60;//line.toInt();
   }
   f.close();
   
@@ -101,7 +101,7 @@ void setup() {
   while (f.available()) {
     line = f.readStringUntil('\n');
     //Serial.println(line);
-    pumpOpTime_FAN = 10*60;//line.toInt();
+    pumpOpTime_FAN = 30*60;//line.toInt();
   }
   f.close();
   
@@ -221,8 +221,8 @@ void setup() {
   });
 
   server.on("/interval_FAN+10", []() {
-    intervalTime_FAN = intervalTime_FAN + 10*60;
-    if (intervalTime_FAN > 60*60*5) intervalTime_FAN = 60*60*5;
+    intervalTime_FAN = intervalTime_FAN + 30*60;
+    if (intervalTime_FAN >= 120*60) intervalTime_FAN = 120*60;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -231,8 +231,8 @@ void setup() {
   });
 
   server.on("/interval_FAN-10", []() {
-    intervalTime_FAN = intervalTime_FAN - 10*60;
-    if (intervalTime_FAN < pumpOpTime_FAN) intervalTime_FAN = intervalTime_FAN + 10*60;
+    intervalTime_FAN = intervalTime_FAN - 30*60;
+    if (intervalTime_FAN < pumpOpTime_FAN) intervalTime_FAN = intervalTime_FAN + 30*60;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -262,7 +262,7 @@ void setup() {
   });
   server.on("/pump_FAN+10", []() {
     pumpOpTime_FAN = pumpOpTime_FAN + 10*60;
-    if (pumpOpTime_FAN > 30*60) pumpOpTime_FAN = 30*60;
+    if (pumpOpTime_FAN >= 50*60) pumpOpTime_FAN = 50*60;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -632,9 +632,8 @@ void setup() {
 
 }
 uint8_t water_flag = 0;
-uint8_t waterLowStartTime = 0;
-uint8_t waterLowNowTime = 0;
-
+uint32_t waterLowStartTime = 0;
+uint32_t waterLowNowTime = 0;d
 
 void loop() {
   delay(10);
@@ -665,9 +664,9 @@ void loop() {
 	water_flag = 1;
 	waterLowNowTime  = int(millis() / 1000);
 
-	if(waterLowNowTime - waterLowStartTime > 60*90)
+	if(waterLowNowTime - waterLowStartTime > 60*9)
 	{
-		digitalWrite(pumpRelay, LOW); //low trigger
+		digitalWrite (lightRelay, LOW); 
 	}
 	else
 	{
@@ -681,6 +680,7 @@ void loop() {
 	      }
 
 	      digitalWrite(pumpRelay, LOW); //low trigger
+	      digitalWrite(pumpRelay_FAN, LOW); //low trigger
 
 	    }
     }
@@ -718,20 +718,23 @@ void loop() {
       }
       if (onHour == offHour) digitalWrite(lightRelay, LOW);
     }
+	  if(fanStat == 0) digitalWrite(pumpRelay_FAN, LOW);  //low trigger
+	  if(fanStat == 1) digitalWrite(pumpRelay_FAN, HIGH);  //low trigger
+	  if(fanStat == 2) 
+	  {
+		  if (remainingSec_FAN > 0)  {
+			digitalWrite(pumpRelay_FAN, LOW); //low trigger
+		  }
+		  if (remainingSec_FAN <= 0 && remainingSec_FAN > -1 * pumpOpTime_FAN )  {
+			digitalWrite(pumpRelay_FAN, HIGH); //low trigger
+		  }
+	  }
 
   }
 
-    if(fanStat == 0) digitalWrite(pumpRelay_FAN, LOW);  //low trigger
-    if(fanStat == 1) digitalWrite(pumpRelay_FAN, HIGH);  //low trigger
-    if(fanStat == 2) 
-    {
-		if (remainingSec_FAN > 0)  {
-	      digitalWrite(pumpRelay_FAN, LOW); //low trigger
-	    }
-	    if (remainingSec_FAN <= 0 && remainingSec_FAN > -1 * pumpOpTime_FAN )  {
-	      digitalWrite(pumpRelay_FAN, HIGH); //low trigger
-	    }
-    }
+}
+
+    
 }
 void writeInitial() {
   File f = SPIFFS.open("/interval.txt", "w");
@@ -904,8 +907,8 @@ void page() {
 	  webPage += "<h3>팬 작동시간: " ;
 	  webPage += int(pumpOpTime_FAN / 60) ;
 	  webPage += "분 가동</h3>\n" ;
-	  webPage += "<p><a class=\"button button-minus\" href=\"/pump_FAN-10\">-30분</a>\n";
-	  webPage += "<a class=\"button button-plus\" href=\"/pump_FAN+10\">+30분</a></p>\n";
+	  webPage += "<p><a class=\"button button-minus\" href=\"/pump_FAN-10\">-10분</a>\n";
+	  webPage += "<a class=\"button button-plus\" href=\"/pump_FAN+10\">+10분</a></p>\n";
   }	
   
   ////여기에 팬가동 , 팬 작동시간 넣기/FAN-10,FAN+10,INTERVAL-10,INTERVAL+10 생성
