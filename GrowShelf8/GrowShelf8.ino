@@ -633,7 +633,7 @@ void setup() {
 }
 uint8_t water_flag = 0;
 uint32_t waterLowStartTime = 0;
-uint32_t waterLowNowTime = 0;d
+uint32_t waterLowNowTime = 0;
 
 void loop() {
   delay(10);
@@ -664,7 +664,7 @@ void loop() {
 	water_flag = 1;
 	waterLowNowTime  = int(millis() / 1000);
 
-	if(waterLowNowTime - waterLowStartTime > 60*9)
+	if(waterLowNowTime - waterLowStartTime > 60*90)
 	{
 		digitalWrite (lightRelay, LOW); 
 	}
@@ -732,7 +732,6 @@ void loop() {
 
   }
 
-}
 
     
 }
