@@ -221,7 +221,7 @@ void setup() {
   });
 
   server.on("/interval_FAN+10", []() {
-    intervalTime_FAN = intervalTime_FAN + 30*60;
+    intervalTime_FAN = intervalTime_FAN + 10*60;
     if (intervalTime_FAN >= 120*60) intervalTime_FAN = 120*60;
     page() ;
     server.send(200, "text/html", webPage);
@@ -231,8 +231,8 @@ void setup() {
   });
 
   server.on("/interval_FAN-10", []() {
-    intervalTime_FAN = intervalTime_FAN - 30*60;
-    if (intervalTime_FAN < pumpOpTime_FAN) intervalTime_FAN = intervalTime_FAN + 30*60;
+    intervalTime_FAN = intervalTime_FAN - 10*60;
+    if (intervalTime_FAN < pumpOpTime_FAN) intervalTime_FAN = intervalTime_FAN + 10*60;
     page() ;
     server.send(200, "text/html", webPage);
     writeInitial();
@@ -261,7 +261,7 @@ void setup() {
     delay(10);
   });
   server.on("/pump_FAN+10", []() {
-    pumpOpTime_FAN = pumpOpTime_FAN + 10*60;
+    pumpOpTime_FAN = pumpOpTime_FAN + 5*60;
     if (pumpOpTime_FAN >= 50*60) pumpOpTime_FAN = 50*60;
     page() ;
     server.send(200, "text/html", webPage);
@@ -271,7 +271,7 @@ void setup() {
   });
 
   server.on("/pump_FAN-10", []() {
-    pumpOpTime_FAN = pumpOpTime_FAN - 10*60;
+    pumpOpTime_FAN = pumpOpTime_FAN - 5*60;
     if (pumpOpTime_FAN < 0) pumpOpTime_FAN = 0;
     page() ;
     server.send(200, "text/html", webPage);
