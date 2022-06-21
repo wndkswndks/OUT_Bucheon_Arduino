@@ -59,7 +59,8 @@ char id[20];
 char pw[20];
 ESP8266WebServer server(80);
 WiFiClient client;
-
+//
+#define LIGHT_LEVLE	199
 void setup() {
   Serial.begin(9600);
   Serial.println();
@@ -71,7 +72,8 @@ void setup() {
   pinMode(lightRelay, OUTPUT);
   digitalWrite(pumpRelay, LOW); //low trigger
   digitalWrite(pumpRelay_FAN, LOW); //low trigger
-  digitalWrite(lightRelay, HIGH); //low trigger
+  //digitalWrite(lightRelay, HIGH); //low trigger
+  analogWrite(lightRelay,0);
   SPIFFS.begin();
   File f = SPIFFS.open("/interval.txt", "r");
   while (f.available()) {
@@ -676,17 +678,20 @@ void loop() {
 
 	if(waterLowNowTime - waterLowStartTime > 60*90)
 	{
-		digitalWrite (lightRelay, LOW); 
+		//digitalWrite (lightRelay, LOW); .
+		analogWrite(lightRelay,0);
 	}
 	else
 	{
   		
 	    if ((currentSec - lastWaterFullSec) > 1) {
 	      if (remainingSec % 5 == 0) {
-	        digitalWrite (lightRelay, LOW);  //low trigger
+	        //digitalWrite (lightRelay, LOW);  //low trigger
+	        analogWrite(lightRelay,0);
 	      }
 	      else {
-	        digitalWrite (lightRelay, HIGH);  //low trigger
+	        //digitalWrite (lightRelay, HIGH);  //low trigger
+	        analogWrite(lightRelay,LIGHT_LEVLE);
 	      }
 
 	      digitalWrite(pumpRelay, LOW); //low trigger
@@ -706,8 +711,8 @@ void loop() {
       digitalWrite(pumpRelay, HIGH); //low trigger
     }
 
-    if (lightStat == 0) digitalWrite(lightRelay, LOW);  //low trigger
-    if (lightStat == 1) digitalWrite(lightRelay, HIGH);  //low trigger
+    if (lightStat == 0) analogWrite(lightRelay,0);//digitalWrite(lightRelay, LOW);  //low trigger
+    if (lightStat == 1) analogWrite(lightRelay,LIGHT_LEVLE);//digitalWrite(lightRelay, HIGH);  //low trigger
 
     if (lightStat == 3) {
       virTimeMinute = int(millis() / 1000 / 60) + adjTimeMinute;
@@ -716,17 +721,18 @@ void loop() {
       //Serial.println(hour);
       if (onHour < offHour) {
         if (hour < offHour && hour >= onHour) { //8AM-20PM
-          digitalWrite(lightRelay, HIGH);  //low trigger
+          //digitalWrite(lightRelay, HIGH);  //low trigger
+          analogWrite(lightRelay,LIGHT_LEVLE);
         }
-        else digitalWrite(lightRelay, LOW);  //low trigger
+        else analogWrite(lightRelay,0);//digitalWrite(lightRelay, LOW);  //low trigger
       }
       if (onHour > offHour) {
         if (hour < offHour || hour >= onHour) { //20AM-8PM
-          digitalWrite(lightRelay, HIGH);  //low trigger
+          analogWrite(lightRelay,LIGHT_LEVLE);//digitalWrite(lightRelay, HIGH);  //low trigger
         }
-        else digitalWrite(lightRelay, LOW);  //low trigger
+        else analogWrite(lightRelay,0);//digitalWrite(lightRelay, LOW);  //low trigger
       }
-      if (onHour == offHour) digitalWrite(lightRelay, LOW);
+      if (onHour == offHour) analogWrite(lightRelay,0);//digitalWrite(lightRelay, LOW);
     }
 	  if(fanStat == 0) digitalWrite(pumpRelay_FAN, LOW);  //low trigger
 	  if(fanStat == 1) digitalWrite(pumpRelay_FAN, HIGH);  //low trigger
